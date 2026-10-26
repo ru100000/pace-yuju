@@ -8,6 +8,9 @@ function message(s){$('message').textContent=s;}
 function ensureGoalField(){const mode=$('mode');if(!mode||$('goalDistance'))return;const label=document.createElement('label');label.innerHTML='運動目標距離 <span>km</span><input id="goalDistance" type="number" min="0.5" max="100" step="0.1" value="3.0" required>';mode.closest('label').after(label);}
 function ensureProgressUI(){const metric=$('distance')?.closest('.primarymetric');if(!metric||$('runProgress'))return;const progress=document.createElement('div');progress.id='runProgress';progress.className='run-progress';progress.innerHTML='<div class="run-track"><span class="run-fill"></span><span class="runner" id="runner" aria-hidden="true">🏃</span></div><div class="run-progress-label"><span>目前進度</span><strong id="goalLabel">目標 3.0 km</strong></div>';metric.append(progress);}
 ensureGoalField();ensureProgressUI();
+const privacyHint=document.querySelector('.privacy-note span');if(privacyHint)privacyHint.textContent='可切換到其他 App；瀏覽器會盡力在背景維持 GPS，返回後請檢查記錄狀態。';
+document.addEventListener('visibilitychange',event=>{if(document.hidden&&session?.state==='running'){lastSignal=Date.now();message('已切換到背景，瀏覽器會盡力維持 GPS 記錄；返回後請檢查狀態。');event.stopImmediatePropagation();}},true);
+setInterval(()=>{if(document.hidden&&session?.state==='running')lastSignal=Date.now();},5000);
 function pinIcon(kind,label){return L.divIcon({className:'map-pin-wrap map-pin-'+kind,html:'<span class="pin-body"><b>'+label+'</b></span>',iconSize:[30,30],iconAnchor:[15,30]});}
 function setTrack(lines){if(route)route.setLatLngs(lines);if(halo)halo.setLatLngs(lines);}
 function clearStart(){if(startMarker&&map)map.removeLayer(startMarker);startMarker=null;}
