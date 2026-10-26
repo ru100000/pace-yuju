@@ -132,7 +132,7 @@
         installFriendsUI();
 
         function installFriendsUI() {
-          const sessionTop = document.querySelector('.session-top');
+          const sessionTop = null;
           if (!sessionTop || sessionTop.querySelector('.friends-button')) return;
           const friendsButton = document.createElement('button');
           friendsButton.className = 'friends-button';
@@ -243,14 +243,14 @@
     installFriendsUI();
 
     function installFriendsUI() {
-      const sessionTop = document.querySelector('.session-top');
-      if (!sessionTop || sessionTop.querySelector('.friends-button')) return;
-      const friendsButton = document.createElement('button');
-      friendsButton.className = 'friends-button';
-      friendsButton.type = 'button';
-      friendsButton.textContent = '好友';
-      friendsButton.onclick = openFriends;
-      sessionTop.append(friendsButton);
+      const nav = document.querySelector('.sidenav');
+      if (!nav || nav.querySelector('.friends-nav')) return;
+      const friendsButton = document.createElement('a');
+      friendsButton.className = 'friends-nav';
+      friendsButton.href = '#friends';
+      friendsButton.innerHTML = '<span class="friends-nav-icon">+</span><span>好友</span>';
+      friendsButton.onclick = event => { event.preventDefault(); openFriends(); };
+      nav.append(friendsButton);
     }
 
     function openFriends() {
