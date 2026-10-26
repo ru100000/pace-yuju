@@ -32,6 +32,16 @@
   function writeProfile(uid, profile) {
     localStorage.setItem(profileKey(uid), JSON.stringify(profile));
   }
+  const friendsKey = uid => `${BASE_KEY}:friends:${uid || 'guest'}`;
+  function readFriends(uid) {
+    try {
+      const value = JSON.parse(localStorage.getItem(friendsKey(uid)) || '[]');
+      return Array.isArray(value) ? value : [];
+    } catch { return []; }
+  }
+  function writeFriends(uid, friends) {
+    localStorage.setItem(friendsKey(uid), JSON.stringify(friends));
+  }
   function emit(next) {
     state = {...state, ...next};
     subscribers.forEach(fn => fn(state));
@@ -119,6 +129,47 @@
           resolve(canvas.toDataURL('image/jpeg', .82));
         };
         image.src = reader.result;
+        installFriendsUI();
+
+        function installFriendsUI() {
+          const sessionTop = document.querySelector('.session-top');
+          if (!sessionTop || sessionTop.querySelector('.friends-button')) return;
+          const friendsButton = document.createElement('button');
+          friendsButton.className = 'friends-button';
+          friendsButton.type = 'button';
+          friendsButton.textContent = '好友';
+          friendsButton.onclick = openFriends;
+          sessionTop.append(friendsButton);
+        }
+
+        function openFriends() {
+          const dialog = document.createElement('dialog');
+          dialog.className = 'friends-notice';
+          dialog.innerHTML = '<div class="profile-heading"><div><span class="overline">PACE CIRCLE</span><h2>我的好友</h2><p>把一起運動的人，放進你的圈子。</p></div><button class="close" type="button" aria-label="關閉">×</button></div><div class="friends-body"><form class="friends-form"><label>好友暱稱或 Email<input name="friend" maxlength="60" placeholder="例如：小安／name@example.com" required><button class="profile-save primary" type="submit">新增好友</button></label></form><p class="friends-note">目前好友清單保存在這台裝置；登入與雲端邀請功能可再接續設定。</p><div class="friends-list"></div></div>';
+          document.body.append(dialog);
+          const list = dialog.querySelector('.friends-list');
+          const form = dialog.querySelector('form');
+          const input = form.elements.friend;
+          const close = () => { dialog.close(); dialog.remove(); };
+          dialog.querySelector('.close').onclick = close;
+          const renderFriends = () => {
+            const friends = readFriends(state.user?.uid);
+            list.replaceChildren();
+            if (!friends.length) { list.innerHTML = '<p class="friends-empty">還沒有好友，先新增一位一起運動的夥伴。</p>'; return; }
+            friends.forEach((friend, index) => {
+              const item = document.createElement('div');
+              item.className = 'friend-item';
+              item.innerHTML = `<span class="friend-avatar">${friend.slice(0, 1).toUpperCase()}</span><strong></strong><button type="button" aria-label="移除好友">移除</button>`;
+              item.querySelector('strong').textContent = friend;
+              item.querySelector('button').onclick = () => { const next = readFriends(state.user?.uid); next.splice(index, 1); writeFriends(state.user?.uid, next); renderFriends(); };
+              list.append(item);
+            });
+          };
+          form.onsubmit = event => { event.preventDefault(); const friend = input.value.trim(); if (!friend) return; const friends = readFriends(state.user?.uid); if (!friends.includes(friend)) friends.push(friend); writeFriends(state.user?.uid, friends); input.value = ''; renderFriends(); };
+          dialog.addEventListener('cancel', close, {once: true});
+          renderFriends();
+          dialog.showModal();
+        }
       };
       reader.readAsDataURL(file);
     });
@@ -138,6 +189,7 @@
     dialog.showModal();
   }
   function installUI() {
+    if (!document.querySelector('link[data-friends-style]')) { const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = 'friends.css'; link.dataset.friendsStyle = ''; document.head.append(link); }
     const topRight = document.querySelector('.topright');
     if (!topRight) return;
     const control = document.createElement('div');
@@ -188,6 +240,47 @@
       }
     });
     if (!configured) button.title = '請先完成 Firebase 設定';
+    installFriendsUI();
+
+    function installFriendsUI() {
+      const sessionTop = document.querySelector('.session-top');
+      if (!sessionTop || sessionTop.querySelector('.friends-button')) return;
+      const friendsButton = document.createElement('button');
+      friendsButton.className = 'friends-button';
+      friendsButton.type = 'button';
+      friendsButton.textContent = '好友';
+      friendsButton.onclick = openFriends;
+      sessionTop.append(friendsButton);
+    }
+
+    function openFriends() {
+      const dialog = document.createElement('dialog');
+      dialog.className = 'friends-notice';
+      dialog.innerHTML = '<div class="profile-heading"><div><span class="overline">PACE CIRCLE</span><h2>我的好友</h2><p>把一起運動的人，放進你的圈子。</p></div><button class="close" type="button" aria-label="關閉">×</button></div><div class="friends-body"><form class="friends-form"><label>好友暱稱或 Email<input name="friend" maxlength="60" placeholder="例如：小安／name@example.com" required><button class="profile-save primary" type="submit">新增好友</button></label></form><p class="friends-note">目前好友清單保存在這台裝置；登入與雲端邀請功能可再接續設定。</p><div class="friends-list"></div></div>';
+      document.body.append(dialog);
+      const list = dialog.querySelector('.friends-list');
+      const form = dialog.querySelector('form');
+      const input = form.elements.friend;
+      const close = () => { dialog.close(); dialog.remove(); };
+      dialog.querySelector('.close').onclick = close;
+      const renderFriends = () => {
+        const friends = readFriends(state.user?.uid);
+        list.replaceChildren();
+        if (!friends.length) { list.innerHTML = '<p class="friends-empty">還沒有好友，先新增一位一起運動的夥伴。</p>'; return; }
+        friends.forEach((friend, index) => {
+          const item = document.createElement('div');
+          item.className = 'friend-item';
+          item.innerHTML = `<span class="friend-avatar">${friend.slice(0, 1).toUpperCase()}</span><strong></strong><button type="button" aria-label="移除好友">移除</button>`;
+          item.querySelector('strong').textContent = friend;
+          item.querySelector('button').onclick = () => { const next = readFriends(state.user?.uid); next.splice(index, 1); writeFriends(state.user?.uid, next); renderFriends(); };
+          list.append(item);
+        });
+      };
+      form.onsubmit = event => { event.preventDefault(); const friend = input.value.trim(); if (!friend) return; const friends = readFriends(state.user?.uid); if (!friends.includes(friend)) friends.push(friend); writeFriends(state.user?.uid, friends); input.value = ''; renderFriends(); };
+      dialog.addEventListener('cancel', close, {once: true});
+      renderFriends();
+      dialog.showModal();
+    }
 
     function openLogin(profileMode = false) {
       if (profileMode) { openProfile(); return; }
