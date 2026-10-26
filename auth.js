@@ -256,11 +256,12 @@
     function openFriends() {
       const dialog = document.createElement('dialog');
       dialog.className = 'friends-notice';
-      dialog.innerHTML = '<div class="profile-heading"><div><span class="overline">PACE CIRCLE</span><h2>我的好友</h2><p>把一起運動的人，放進你的圈子。</p></div><button class="close" type="button" aria-label="關閉">×</button></div><div class="friends-body"><form class="friends-form"><label>好友暱稱或 Email<input name="friend" maxlength="60" placeholder="例如：小安／name@example.com" required><button class="profile-save primary" type="submit">新增好友</button></label></form><p class="friends-note">目前好友清單保存在這台裝置；登入與雲端邀請功能可再接續設定。</p><div class="friends-list"></div></div>';
+      dialog.innerHTML = '<div class="profile-heading"><div><span class="overline">PACE CIRCLE</span><h2>我的好友</h2><p>把一起運動的人，放進你的圈子。</p></div><button class="close" type="button" aria-label="關閉">×</button></div><div class="friends-body"><form class="friends-form"><label>好友暱稱或 Email<input name="friend" maxlength="60" placeholder="例如：小安／name@example.com" required></label><label>好友頭貼<input name="avatar" type="file" accept="image/png,image/jpeg,image/webp"></label><button class="profile-save primary" type="submit">新增好友</button></form><p class="friends-note">好友頭貼會跟著這筆好友資料保存；未設定時使用預設人像。</p><div class="friends-list"></div></div>';
       document.body.append(dialog);
       const list = dialog.querySelector('.friends-list');
       const form = dialog.querySelector('form');
       const input = form.elements.friend;
+      const avatarInput = form.elements.avatar;
       const close = () => { dialog.close(); dialog.remove(); };
       dialog.querySelector('.close').onclick = close;
       const renderFriends = () => {
@@ -270,13 +271,17 @@
         friends.forEach((friend, index) => {
           const item = document.createElement('div');
           item.className = 'friend-item';
-          item.innerHTML = `<span class="friend-avatar">${friend.slice(0, 1).toUpperCase()}</span><strong></strong><button type="button" aria-label="移除好友">移除</button>`;
-          item.querySelector('strong').textContent = friend;
+          const entry = typeof friend === 'string' ? {name: friend, avatar: ''} : friend;
+          item.innerHTML = '<span class="friend-avatar"></span><strong></strong><button type="button" aria-label="移除好友">移除</button>';
+          const avatar = item.querySelector('.friend-avatar');
+          avatar.textContent = entry.avatar ? '' : '👤';
+          if (entry.avatar) { avatar.style.backgroundImage = `url(${entry.avatar})`; avatar.classList.add('has-photo'); }
+          item.querySelector('strong').textContent = entry.name;
           item.querySelector('button').onclick = () => { const next = readFriends(state.user?.uid); next.splice(index, 1); writeFriends(state.user?.uid, next); renderFriends(); };
           list.append(item);
         });
       };
-      form.onsubmit = event => { event.preventDefault(); const friend = input.value.trim(); if (!friend) return; const friends = readFriends(state.user?.uid); if (!friends.includes(friend)) friends.push(friend); writeFriends(state.user?.uid, friends); input.value = ''; renderFriends(); };
+      form.onsubmit = async event => { event.preventDefault(); const friend = input.value.trim(); if (!friend) return; const avatar = await readAvatar(avatarInput.files[0]); const friends = readFriends(state.user?.uid); if (!friends.some(item => (typeof item === 'string' ? item : item.name) === friend)) friends.push({name: friend, avatar}); writeFriends(state.user?.uid, friends); input.value = ''; avatarInput.value = ''; renderFriends(); };
       dialog.addEventListener('cancel', close, {once: true});
       renderFriends();
       dialog.showModal();
