@@ -109,7 +109,10 @@
   async function saveProfile(profile) {
     const uid = state.user?.uid;
     writeProfile(uid, profile);
-    if (uid && db) await db.collection('users').doc(uid).set(profile, {merge: true});
+    if (uid && db) {
+      await db.collection('users').doc(uid).set(profile, {merge: true});
+      await db.collection('publicProfiles').doc(uid).set({name: profile.name || '', avatar: profile.avatar || '', email: state.user.email || ''}, {merge: true});
+    }
     emit({profile});
   }
   function readAvatar(file) {
@@ -259,7 +262,7 @@
     function openFriends() {
       const dialog = document.createElement('dialog');
       dialog.className = 'friends-notice';
-      dialog.innerHTML = '<div class="profile-heading"><div><span class="overline">PACE CIRCLE</span><h2>我的好友</h2><p>把一起運動的人，放進你的圈子。</p></div><button class="close" type="button" aria-label="關閉">×</button></div><div class="friends-body"><form class="friends-form"><label>好友暱稱或 Email<input name="friend" maxlength="60" placeholder="例如：小安／name@example.com" required></label><label>好友頭貼<input name="avatar" type="file" accept="image/png,image/jpeg,image/webp"></label><button class="profile-save primary" type="submit">新增好友</button></form><p class="friends-note">好友頭貼會跟著這筆好友資料保存；未設定時使用預設人像。</p><div class="friends-list"></div></div>';
+      dialog.innerHTML = '<div class="profile-heading"><div><span class="overline">PACE CIRCLE</span><h2>我的好友</h2><p>把一起運動的人，放進你的圈子。</p></div><button class="close" type="button" aria-label="關閉">×</button></div><div class="friends-body"><form class="friends-form"><label>好友暱稱或 Email<input name="friend" maxlength="60" placeholder="例如：小安／name@example.com" required></label><button class="profile-save primary" type="submit">新增好友</button></form><p class="friends-note">輸入好友 Email 後，會顯示好友自己設定的頭像；尚未同步時使用預設人像。</p><div class="friends-list"></div></div>';
       document.body.append(dialog);
       const list = dialog.querySelector('.friends-list');
       const social = document.createElement('div');
@@ -267,7 +270,6 @@
       dialog.querySelector('.friends-body').append(social);
       const form = dialog.querySelector('form');
       const input = form.elements.friend;
-      const avatarInput = form.elements.avatar;
       const close = () => { dialog.close(); dialog.remove(); };
       dialog.querySelector('.close').onclick = close;
       const renderFriends = () => {
@@ -287,7 +289,7 @@
           list.append(item);
         });
       };
-      form.onsubmit = async event => { event.preventDefault(); const friend = input.value.trim(); if (!friend) return; const avatar = await readAvatar(avatarInput.files[0]); const friends = readFriends(state.user?.uid); if (!friends.some(item => (typeof item === 'string' ? item : item.name) === friend)) friends.push({name: friend, avatar}); writeFriends(state.user?.uid, friends); input.value = ''; avatarInput.value = ''; renderFriends(); };
+      form.onsubmit = async event => { event.preventDefault(); const friend = input.value.trim(); if (!friend) return; let entry={name:friend,avatar:''};if(db&&state.user&&friend.includes('@')){const snapshot=await db.collection('publicProfiles').where('email','==',friend.toLowerCase()).limit(1).get();if(!snapshot.empty){const profile=snapshot.docs[0].data();entry={name:profile.name||friend,avatar:profile.avatar||'',uid:snapshot.docs[0].id};}}const friends=readFriends(state.user?.uid);if(!friends.some(item=>(typeof item==='string'?item:item.name)===friend))friends.push(entry);writeFriends(state.user?.uid,friends);input.value='';renderFriends(); };
       dialog.addEventListener('cancel', close, {once: true});
       renderFriends();
       dialog.showModal();
