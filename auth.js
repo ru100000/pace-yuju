@@ -258,6 +258,25 @@
       friendsButton.innerHTML = '<span class="friends-nav-icon">+</span><span>好友</span>';
       friendsButton.onclick = event => { event.preventDefault(); openFriends(); };
       nav.append(friendsButton);
+      const dataButton = document.createElement('a');
+      dataButton.className = 'data-nav';
+      dataButton.href = '#data';
+      dataButton.innerHTML = '<span class="data-nav-icon">×</span><span>資料管理</span>';
+      dataButton.onclick = event => { event.preventDefault(); openDataManagement(); };
+      nav.append(dataButton);
+    }
+
+    function openDataManagement() {
+      const dialog = document.createElement('dialog');
+      dialog.className = 'friends-notice data-notice';
+      dialog.innerHTML = '<div class="profile-heading"><div><span class="overline">DATA CONTROL</span><h2>資料管理</h2><p>示範測試結束後，可以在這裡清理資料。</p></div><button class="close" type="button" aria-label="關閉">×</button></div><div class="friends-body"><div class="data-action"><div><strong>清除示範紀錄</strong><small>只刪除示範運動，不影響真實 GPS 紀錄。</small></div><button type="button" class="data-demo">清除示範</button></div><div class="data-action danger"><div><strong>清除全部運動紀錄</strong><small>會永久刪除本機與已同步的運動紀錄。</small></div><button type="button" class="data-all">全部清除</button></div></div>';
+      document.body.append(dialog);
+      const close = () => { dialog.close(); dialog.remove(); };
+      dialog.querySelector('.close').onclick = close;
+      dialog.querySelector('.data-demo').onclick = async () => { const keep = (state.records || []).filter(record => !record.demo); await saveRecords(keep); close(); };
+      dialog.querySelector('.data-all').onclick = async () => { if (!confirm('確定要刪除全部運動紀錄嗎？此操作無法復原。')) return; await saveRecords([]); close(); };
+      dialog.addEventListener('cancel', close, {once: true});
+      dialog.showModal();
     }
 
     function openFriends() {
