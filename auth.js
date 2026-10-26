@@ -101,12 +101,12 @@
     button.onclick = () => openLogin();
     control.addEventListener('click', event => {
       if (event.target === button || !state.user) return;
-      if (confirm('要登出目前的 Google 帳號嗎？')) auth.signOut();
+      if (confirm('要登出目前的帳號嗎？')) auth.signOut();
     });
     subscribers.add(next => {
       if (next.user) {
         avatar.textContent = (next.user.displayName || next.user.email || 'G').slice(0, 1).toUpperCase();
-        name.textContent = next.user.displayName || next.user.email || 'Google 使用者';
+        name.textContent = next.user.displayName || next.user.email || '已登入使用者';
         status.textContent = next.error || '紀錄已同步到雲端';
         button.textContent = '登出';
         button.onclick = () => auth.signOut();
@@ -123,7 +123,7 @@
     function openLogin() {
       const dialog = document.createElement('dialog');
       dialog.className = 'auth-notice';
-      dialog.innerHTML = '<div class="dialog-head"><div><span class="overline">ACCOUNT</span><h2>登入或註冊</h2></div><button class="close" type="button" aria-label="關閉">×</button></div><p>使用 Email 與密碼保存你的運動紀錄。密碼由 Firebase 安全處理。</p><form><label>Email<input type="email" autocomplete="email" required></label><label>密碼<input type="password" minlength="6" autocomplete="current-password" required></label><div class="controls"><button class="primary" type="submit">登入</button><button type="button" class="account-button register">建立帳號</button></div></form>';
+      dialog.innerHTML = '<div class="auth-heading"><span class="auth-mark">//</span><div><span class="overline">YOUR PACE ACCOUNT</span><h2>登入你的運動空間</h2></div><button class="close" type="button" aria-label="關閉">×</button></div><p class="auth-lead">保存每一次練習，換一台裝置也能接著看見自己的紀錄。</p><form class="auth-form"><label>Email<input type="email" autocomplete="email" placeholder="name@example.com" required></label><label>密碼<input type="password" minlength="6" autocomplete="current-password" placeholder="至少 6 個字元" required></label><div class="auth-actions"><button class="primary" type="submit">登入帳號 <span>→</span></button><button type="button" class="account-button register">建立新帳號</button></div><p class="auth-privacy"><span>●</span> 密碼由 Firebase 安全處理，運動紀錄只屬於你的帳號。</p></form>';
       document.body.append(dialog);
       const form = dialog.querySelector('form');
       const email = form.querySelector('input[type="email"]');
