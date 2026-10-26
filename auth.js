@@ -84,6 +84,7 @@
   async function saveRecords(rows) {
     const uid = state.user?.uid;
     writeLocal(uid, rows);
+    emit({records: rows});
     if (!uid || !db) return;
     const ref = collection(uid);
     const current = await ref.get();
@@ -268,6 +269,20 @@
       const social = document.createElement('div');
       social.innerHTML = '<style>.social-panels{display:grid;gap:10px;margin-top:18px}.social-panel{display:flex;align-items:flex-start;gap:10px;padding:13px;border:1px solid #e0e5da;border-radius:10px;background:#f7f9f3}.social-panel h3{margin:0 0 3px;color:#5d6e59;font-size:12px}.social-panel p{margin:0;color:#8a9581;font-size:10px;line-height:1.6}.social-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#dfe7d3;color:#667655;font-size:16px;flex-shrink:0}.social-panel button{margin-top:8px;border:1px solid #d5ddcc;border-radius:6px;padding:5px 8px;background:#fff;color:#6b7b68;font-size:10px}</style><div class="social-panels"><section class="social-panel"><span class="social-icon">✦</span><div><h3>可能認識的人</h3><p>登入並加入班級後，會依共同課程與共同好友推薦對象。</p><button type="button" disabled>等待好友同步</button></div></section><section class="social-panel"><span class="social-icon">↗</span><div><h3>本週運動排行</h3><p>好友同步後，這裡會顯示本週距離與運動時間排名。</p><button type="button" disabled>尚未開始排行</button></div></section></div>';
       dialog.querySelector('.friends-body').append(social);
+      const garden = document.createElement('section');
+      garden.className = 'garden-card';
+      dialog.querySelector('.friends-body').append(garden);
+      const renderGarden = () => {
+        const workouts = (state.records || []).filter(record => !record.demo).length;
+        const friends = readFriends(state.user?.uid).length;
+        const plants = Math.min(12, workouts);
+        const animals = Math.min(6, Math.floor(workouts / 3));
+        const stage = workouts >= 10 ? '小小生態森林' : workouts >= 5 ? '成長中的小森林' : workouts >= 1 ? '剛發芽的綠地' : '等待第一顆種子';
+        const progress = workouts >= 10 ? 100 : (workouts % 5) * 20;
+        garden.innerHTML = `<div class="garden-head"><div><span class="overline">PACE ECO CIRCLE</span><h3>一起養一座森林</h3><p>${stage} · 每次真實運動種下一株植物</p></div><strong>${workouts} 次</strong></div><div class="garden-scene" aria-label="運動養成森林"><span class="sun">☼</span><span class="cloud">☁</span><div class="garden-ground"></div>${Array.from({length: plants}, (_, index) => `<span class="plant plant-${index % 4}">🌱</span>`).join('')}${Array.from({length: Math.min(animals, plants)}, (_, index) => `<span class="animal animal-${index % 3}">${['🐿️','🐰','🦋'][index % 3]}</span>`).join('')}</div><div class="garden-progress"><span>距離下一株植物</span><strong>${workouts % 5}/5</strong><i><b style="width:${progress}%"></b></i></div><div class="garden-foot"><span>好友 ${friends} 人</span><span>${friends ? '好友一起加入後可共同照顧' : '新增好友，一起累積生態點'}</span></div>`;
+      };
+      renderGarden();
+      window.PaceAuth?.onChange(next => { if (next.records) { state.records = next.records; renderGarden(); } });
       const form = dialog.querySelector('form');
       const input = form.elements.friend;
       const close = () => { dialog.close(); dialog.remove(); };
