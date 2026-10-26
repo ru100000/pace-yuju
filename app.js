@@ -1,7 +1,7 @@
 'use strict';
 const $=id=>document.getElementById(id), center=[24.1796,120.6495], KEY='campus-move-history-v1';
 // Base map source is defined in tiles.js (CARTO Voyager, OpenStreetMap data). Change it there for school-wide use.
-let records=[];try{records=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(records))records=[];}catch{}
+let records=window.PaceAuth?.getRecords?.()||[];
 let map, route, halo=null, startMarker=null, positionDot, accuracyCircle, targetMarker, targetLine, target=null, current=null;
 let session=null, watch=null, demoTimer=null, wake=null, last=null, lastSignal=0, lines=[], storageOK=true;
 function message(s){$('message').textContent=s;}
@@ -32,7 +32,7 @@ $('profile').onsubmit=e=>{e.preventDefault();begin(false);};$('demo').onclick=()
 function demoTick(){const i=session.demoIndex++,angle=i*.12;session.seconds+=5;receive({lat:center[0]+.00062*Math.sin(angle),lng:center[1]+.00085*Math.cos(angle),accuracy:6,t:session.id+i*6000});}
 function pause(reason){if(!session||session.state!=='running')return;session.seconds=seconds();session.runStart=0;session.state='paused';stopWatch();last=null;$('badge').textContent='● 已暫停';message(reason||'已暫停；暫停期間不累計時間與距離。');render();}
 $('pause').onclick=()=>{if(session.state==='running')pause();else {message('等待新的有效定位後繼續…');run();}};
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(records));storageOK=true;}catch{storageOK=false;message('裝置儲存空間不足或儲存被封鎖。紀錄暫留本頁，請先匯出 CSV 再離開。');}}
+async function persist(){try{if(window.PaceAuth)await window.PaceAuth.saveRecords(records);else localStorage.setItem(KEY,JSON.stringify(records));storageOK=true;}catch{storageOK=false;message('裝置儲存空間不足或雲端同步失敗。紀錄暫留本頁，請先匯出 CSV 再離開。');}}
 $('finish').onclick=()=>{if(!session||session.state==='finished')return;session.seconds=seconds();session.runStart=0;session.state='finished';stopWatch();session.kcal=MoveCore.calories(session.met,session.weight,session.seconds);records.unshift({...session,points:[...session.points],target:target?{lat:target.lat,lng:target.lng}:null});persist();renderHistory();render();$('badge').textContent='● 運動已結束';if(storageOK)message(`已儲存${session.demo?'示範':''}紀錄：${(session.meters/1000).toFixed(2)} km，${fmt(session.seconds)}。可匯出摘要或 GPS 軌跡。`);};
 function download(name,body,type){const url=URL.createObjectURL(new Blob([body],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function cell(v){let s=String(v??'');if(/^[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';}
@@ -47,6 +47,7 @@ $('exportAll').onclick=()=>exportCSV(records);$('deleteAll').onclick=()=>{if(rec
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&session?.state==='running')pause('頁面已離開前景，為避免漏記與錯估已自動暫停。回到頁面後按「繼續」。');});
 window.addEventListener('beforeunload',e=>{if(session&&session.state!=='finished'){e.preventDefault();e.returnValue='';}});
 setInterval(()=>{if(session?.state==='running'&&!session.demo&&Date.now()-lastSignal>30000)pause('超過 30 秒沒有 GPS 更新，已自動暫停。請檢查定位後按繼續。');render();},1000);
+window.PaceAuth?.onChange(next=>{records=next.records||[];renderHistory();if(next.error)message(next.error);});
 renderHistory();render();if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 
 document.querySelectorAll('.sidenav a[href^="#"]').forEach(a=>a.addEventListener('click',()=>{document.querySelectorAll('.sidenav a').forEach(n=>n.classList.toggle('active',n===a));document.querySelector('.breadcrumb strong').textContent=a.textContent.trim();}));

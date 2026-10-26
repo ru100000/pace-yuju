@@ -2,6 +2,10 @@
 
 這個倉庫是你自己的網站，是純靜態網頁，部署在 GitHub Pages，不需要後端，也不需要資料庫。運動紀錄只存在你的手機或電腦瀏覽器中。
 
+## Email 登入與帳號紀錄
+
+請依照 [AUTH_SETUP.md](AUTH_SETUP.md) 建立 Firebase Authentication、啟用 Email/Password 登入、發布 `firestore.rules`，再填寫 `firebase-config.js`。設定完成後，登入同一個帳號即可在不同裝置取回自己的運動紀錄。
+
 ## 開始使用
 
 1. 在 Settings → Pages 找到你的網址，格式是 `https://你的帳號.github.io/倉庫名稱/`。
@@ -12,13 +16,13 @@
 
 在 Copilot Chat 輸入下列指令（需要 VS Code 支援 prompt 檔案）：
 
-| 指令 | 用途 |
-| --- | --- |
-| `/explain-project` | 用繁體中文認識專案檔案與資料流程 |
-| `/preview-locally` | 在電腦啟動本機預覽，網址是 http://localhost:8000 |
-| `/change-and-check` | 小步修改一個參數，並給出驗證步驟 |
-| `/analyze-track` | 分析你匯出的軌跡 JSON，驗算距離、速度與熱量 |
-| `/publish-changes` | 檢查變更、commit 並推送，讓網站自動更新 |
+| 指令                | 用途                                             |
+| ------------------- | ------------------------------------------------ |
+| `/explain-project`  | 用繁體中文認識專案檔案與資料流程                 |
+| `/preview-locally`  | 在電腦啟動本機預覽，網址是 http://localhost:8000 |
+| `/change-and-check` | 小步修改一個參數，並給出驗證步驟                 |
+| `/analyze-track`    | 分析你匯出的軌跡 JSON，驗算距離、速度與熱量      |
+| `/publish-changes`  | 檢查變更、commit 並推送，讓網站自動更新          |
 
 ## 隱私
 
